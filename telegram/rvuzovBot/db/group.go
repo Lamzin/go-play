@@ -42,15 +42,15 @@ func (g Group) GetName() string {
 func GroupSearch(id, query string) (groups []Group, err error) {
 	groups = make([]Group, 0)
 	log.Debug("Search group:" + query + " in faculty:" + id)
+	var find interface{}
 	if query == "" {
-		//err = Groups.Find(bson.M{"faculty": id}).Sort("name").Limit(5).All(&result)
+		find = bson.M{"faculty": id}
 	} else if utf8.RuneCountInString(query) < 3 {
-		find := bson.M{"faculty": id, "name": &bson.RegEx{Pattern: "^" + query, Options: "si"}}
-		err = DBGroups.Find(find).Sort("name").Limit(10).All(&groups)
+		find = bson.M{"faculty": id, "name": &bson.RegEx{Pattern: "^" + query, Options: "si"}}
 	} else {
-		find := bson.M{"faculty": id, "name": &bson.RegEx{Pattern: query, Options: "si"}}
-		err = DBGroups.Find(find).Sort("name").Limit(10).All(&groups)
+		find = bson.M{"faculty": id, "name": &bson.RegEx{Pattern: query, Options: "si"}}
 	}
+	err = DBGroups.Find(find).Limit(50).Sort("name").All(&groups)
 	refresh("group", err)
 	return
 }

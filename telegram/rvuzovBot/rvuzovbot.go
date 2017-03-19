@@ -18,7 +18,7 @@ func main() {
 	db.Init()
 	botDB.Init()
 
-	tbot, err := telebot.NewBot("HERE IS BOT API TOKEN")
+	tbot, err := telebot.NewBot("318894634:AAF6k5ykqoDH_ieuCTqhkGX4fCWbxi3J2cQ")
 	if err != nil {
 		return
 	}

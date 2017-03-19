@@ -26,13 +26,13 @@ func FacultySearch(id, query string) (faculties []Faculty, err error) {
 	log.Debug("Search faculty:" + query + " in unversity:" + id)
 	if query == "" {
 		find := bson.M{"university": id}
-		err = Faculties.Find(find).Sort("name").Limit(100).All(&faculties)
+		err = Faculties.Find(find).Sort("name").Limit(50).All(&faculties)
 	} else if utf8.RuneCountInString(query) < 3 {
 		find := bson.M{"university": id, "name": &bson.RegEx{Pattern: "^" + query, Options: "si"}}
-		err = Faculties.Find(find).Sort("name").Limit(20).All(&faculties)
+		err = Faculties.Find(find).Sort("name").Limit(50).All(&faculties)
 	} else {
 		find := bson.M{"university": id, "name": &bson.RegEx{Pattern: query, Options: "i"}}
-		err = Faculties.Find(find).Sort("name").Limit(20).All(&faculties)
+		err = Faculties.Find(find).Sort("name").Limit(50).All(&faculties)
 	}
 	refresh("faculty", err)
 	return

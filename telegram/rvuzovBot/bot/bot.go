@@ -2,12 +2,16 @@ package bot
 
 import (
 	"fmt"
+
 	"github.com/op/go-logging"
 	"github.com/tucnak/telebot"
 
+	"time"
+
 	"../botDB"
 	"../db"
-	"time"
+	"gopkg.in/kyokomi/emoji.v1"
+	"strings"
 )
 
 var log = logging.MustGetLogger("bot")
@@ -59,8 +63,8 @@ func (ctx *handlerCtx) Handle() error {
 		return ctx.Start()
 	} else if ctx.Message.Text == "/reset" {
 		return ctx.Reset()
-	} else if ctx.Message.Text == "/hello" {
-		return ctx.Hello()
+	} else if ctx.Message.Text == "/schedule" {
+		return ctx.Schedule()
 	}
 
 	switch ctx.chat.State {
@@ -78,11 +82,14 @@ func (ctx *handlerCtx) Handle() error {
 }
 
 func (ctx *handlerCtx) Start() error {
-	text := "Расписание ВУЗов - MUST HAVE приложение для студента. " +
-		"Более 1 000 университетов и 200 000 довольных студентов.\n\n" +
-		"Расписание можно добавить и редактировать через удобный редактор editor.rvuzov.ru :)\n\n" +
-		"Больше информации смотри на официальном сайте rvuzov.ru или группе vk.com/rvuzov\n\n" +
-		"Возникли проблемы - пишите нам на help@rvuzov.ru"
+	text := `Привет! Я бот расписание – скорее всего, у меня есть твое расписание.
+Я умею показывать расписание занятий на текущий день. 
+Для этого мне нужно знать в каком университете, факультете и группе ты учишься. 
+	
+Поддерживаются следущие команды:
+/start - начать диалог со мной
+/reset - сбросить свои настройки
+/schedule - показать расписание на сегодня`
 	ctx.send(text, nil)
 	return ctx.Reset()
 }
@@ -92,19 +99,25 @@ func (ctx *handlerCtx) Reset() error {
 	return ctx.UniversitySuggestStart()
 }
 
-func (ctx *handlerCtx) Hello() error {
-	ctx.send("Hi^-^", nil)
-
-	return nil
-}
-
 func (ctx *handlerCtx) UniversitySuggestStart() error {
-	ctx.send("Введи часть названия или аббревиатуры университета", nil)
+	universities, _ := db.UniversityList()
+
+	buttons := make([]ButtonItem, len(universities))
+	for i, u := range universities {
+		buttons[i] = ButtonItem(u)
+	}
+	keyboard := buildKeyboardList(buttons)
+	ctx.chat.Keyboard = keyboard
+
 	ctx.chat.University = ""
 	ctx.chat.Faculty = ""
 	ctx.chat.Group = ""
 	ctx.chat.State = "universitySuggest"
 	ctx.chat.Save()
+	err := ctx.send("Введи часть названия или аббревиатуры университета", keyboard.ToTelebotKeyboard())
+	if err != nil {
+		log.Error(err.Error())
+	}
 	return nil
 }
 
@@ -141,7 +154,17 @@ func (ctx *handlerCtx) UniversitySuggest() error {
 }
 
 func (ctx *handlerCtx) FacultySuggestStart() error {
-	ctx.send("Введи часть названия факультета", nil)
+	faculties, _ := db.FacultySearch(ctx.chat.University, "")
+
+	buttons := make([]ButtonItem, len(faculties))
+	for i, u := range faculties {
+		buttons[i] = ButtonItem(u)
+	}
+	keyboard := buildKeyboardList(buttons)
+	ctx.chat.Keyboard = keyboard
+	ctx.chat.Save()
+
+	ctx.send("Введи часть названия факультета или выбери из списка", keyboard.ToTelebotKeyboard())
 	return nil
 }
 
@@ -179,7 +202,17 @@ func (ctx *handlerCtx) FacultySuggest() error {
 }
 
 func (ctx *handlerCtx) GroupSuggestStart() error {
-	ctx.send("Введи часть названия группы", nil)
+	groups, _ := db.GroupSearch(ctx.chat.Faculty, "")
+
+	buttons := make([]ButtonItem, len(groups))
+	for i, u := range groups {
+		buttons[i] = ButtonItem(u)
+	}
+	keyboard := buildKeyboardList(buttons)
+	ctx.chat.Keyboard = keyboard
+	ctx.chat.Save()
+
+	ctx.send("Введи часть названия группы", keyboard.ToTelebotKeyboard())
 	return nil
 }
 
@@ -217,48 +250,36 @@ func (ctx *handlerCtx) GroupSuggest() error {
 }
 
 func (ctx *handlerCtx) Schedule() error {
-	var keyboard Keyboard = Keyboard{
-		[]botDB.KeyboardButtonOption{
-			botDB.KeyboardButtonOption{
-				Text:   "Вчера",
-				Action: getHumanDate(time.Now().Add(-24 * time.Hour)),
-			},
-			botDB.KeyboardButtonOption{
-				Text:   "Сегодня",
-				Action: getHumanDate(time.Now()),
-			},
-			botDB.KeyboardButtonOption{
-				Text:   "Завтра",
-				Action: getHumanDate(time.Now().Add(24 * time.Hour)),
-			},
-		},
+	if ctx.chat.Group == "" {
+		return ctx.Start()
 	}
-	ctx.chat.Keyboard = keyboard
-	ctx.chat.Save()
 
-	for _, row := range ctx.chat.Keyboard {
-		for _, item := range row {
-			if item.Text == ctx.Message.Text {
-				lessons, _ := db.GetLessonsByDate(ctx.chat.Group, item.Action)
-				if len(lessons) == 0 {
-					ctx.send(fmt.Sprintf("%s\nНету пар", item.Action), keyboard.ToTelebotKeyboard())
-				}
-				for _, lesson := range lessons {
-					text := fmt.Sprintf("%s-%s %s\n", lesson.Time.Start, lesson.Time.End, lesson.Subject)
-					for _, teacher := range lesson.Teachers {
-						text += teacher.Name + "\n"
-					}
-					ctx.send(text, keyboard.ToTelebotKeyboard())
-				}
-				return nil
+	lessons, _ := db.GetLessonsByDate(ctx.chat.Group, getHumanDate(time.Now()))
+	if len(lessons) == 0 {
+		ctx.send("Сегодня можно отдохнуть! :)", nil)
+	}
+	for _, lesson := range lessons {
+		text := fmt.Sprintf(":clock3:%s-%s\n:book:%s\n", lesson.Time.Start, lesson.Time.End, lesson.Subject)
+
+		if len(lesson.Teachers) > 0 {
+			teachers := make([]string, 0)
+			for _, teacher := range lesson.Teachers {
+				teachers = append(teachers, teacher.Name)
 			}
+			text += ":man:" + strings.Join(teachers, ", ") + "\n"
 		}
+
+		if len(lesson.Audiences) > 0 {
+			audiences := make([]string, 0)
+			for _, audience := range lesson.Audiences {
+				audiences = append(audiences, audience.Name)
+			}
+			text += ":earth_americas:" + strings.Join(audiences, ", ") + "\n"
+		}
+
+		text = emoji.Sprint(text)
+		ctx.send(text, nil)
 	}
-
-	ctx.send("попробуй еще раз :)", keyboard.ToTelebotKeyboard())
-	ctx.send("👨‍🎨", keyboard.ToTelebotKeyboard())
-
-
 	return nil
 }
 

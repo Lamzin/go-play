@@ -32,7 +32,7 @@ func (u University) GetName() string {
 
 func UniversityList() (universities []University, err error) {
 	universities = make([]University, 0)
-	err = Universities.Find(nil).Limit(50).Sort("ucount").All(&universities)
+	err = Universities.Find(nil).Limit(50).Sort("-ucount").All(&universities)
 	refresh("university", err)
 	return
 }
@@ -46,7 +46,7 @@ func UniversitySearch(query string) (universities []University, err error) {
 				bson.M{"name": &bson.RegEx{Pattern: "^" + query, Options: "si"}},
 				bson.M{"abbr": &bson.RegEx{Pattern: "^" + query, Options: "si"}}},
 			"whitelabel": bson.M{"$ne": true}}
-		err = Universities.Find(find).Sort("name").Limit(20).All(&universities)
+		err = Universities.Find(find).Sort("name").Limit(50).All(&universities)
 	} else {
 		find := bson.M{
 			"gcount": bson.M{"$gt": 0},
@@ -54,7 +54,7 @@ func UniversitySearch(query string) (universities []University, err error) {
 				bson.M{"name": &bson.RegEx{Pattern: query, Options: "i"}},
 				bson.M{"abbr": &bson.RegEx{Pattern: query, Options: "i"}}},
 			"whitelabel": bson.M{"$ne": true}}
-		err = Universities.Find(find).Sort("name").Limit(20).All(&universities)
+		err = Universities.Find(find).Sort("name").Limit(50).All(&universities)
 	}
 	refresh("university", err)
 	return
