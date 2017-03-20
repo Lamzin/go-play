@@ -61,10 +61,12 @@ func (ctx *handlerCtx) Handle() error {
 
 	if ctx.Message.Text == "/start" {
 		return ctx.Start()
-	} else if ctx.Message.Text == "/reset" {
-		return ctx.Reset()
-	} else if ctx.Message.Text == "/schedule" {
-		return ctx.Schedule()
+	} else if ctx.Message.Text == "/today" {
+		return ctx.Today()
+	} else if ctx.Message.Text == "/tomorrow" {
+		return ctx.Tomorrow()
+	} else if ctx.Message.Text == "/help" {
+		return ctx.Help()
 	}
 
 	switch ctx.chat.State {
@@ -75,7 +77,7 @@ func (ctx *handlerCtx) Handle() error {
 	case "groupSuggest":
 		return ctx.GroupSuggest()
 	case "schedule":
-		return ctx.Schedule()
+		return ctx.Today()
 	default:
 		return ctx.Start()
 	}
@@ -226,7 +228,7 @@ func (ctx *handlerCtx) GroupSuggest() error {
 				ctx.chat.Save()
 
 				ctx.send(fmt.Sprintf(`Отлично! Твоя группа "%s".`, ctx.Message.Text), nil)
-				return ctx.Schedule()
+				return ctx.Today()
 			}
 		}
 	}
@@ -249,7 +251,7 @@ func (ctx *handlerCtx) GroupSuggest() error {
 	return nil
 }
 
-func (ctx *handlerCtx) Schedule() error {
+func (ctx *handlerCtx) Today() error {
 	if ctx.chat.Group == "" {
 		return ctx.Start()
 	}
@@ -280,6 +282,24 @@ func (ctx *handlerCtx) Schedule() error {
 		text = emoji.Sprint(text)
 		ctx.send(text, nil)
 	}
+	return nil
+}
+
+func (ctx *handlerCtx) Tomorrow() error {
+	ctx.send("Для просмотра расписания на завтра, создания заданий и других функций загружайте наши приложения:", nil)
+	ctx.send("play.google.com/store/apps/details?id=com.raspisaniyevuzov.app", nil)
+	ctx.send("itunes.apple.com/ru/app/raspisanie-vuzov/id631171099?mt=8", nil)
+	ctx.chat.Keyboard = nil
+	ctx.chat.Save()
+	return nil
+}
+
+func (ctx *handlerCtx) Help() error {
+	text := `
+	Напиши нам в поддержку @rvuzov`
+	ctx.send(text, nil)
+	ctx.chat.Keyboard = nil
+	ctx.chat.Save()
 	return nil
 }
 
