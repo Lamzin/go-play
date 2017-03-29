@@ -147,7 +147,12 @@ func (ctx *handlerCtx) UniversitySuggest() error {
 	if len(universities) != 0 {
 		ctx.send(fmt.Sprintf("Список университетов по запросу `%s`.\n\nНичего не нашёл? Измени запрос и попробуй еще раз.", ctx.Message.Text), keyboard.ToTelebotKeyboard())
 	} else {
-		ctx.send(fmt.Sprintf("Ничего не найдено по запросу `%s`.\n\nПопробуй изменить запрос.", ctx.Message.Text), nil)
+		ctx.send(emoji.Sprintf(
+			"Кажется, мы не нашли твой университет.\nТы можешь добавить его через наш "+
+				"онлайн-редактор editor.rvuzov.ru или там же заказать расписание – мы его добавим :slightly_smiling_face:"), nil)
+		ctx.send("Кстати, ты можешь самостоятельно добавить расписание прямо в мобильном приложение:", nil)
+		ctx.send("itunes.apple.com/ru/app/raspisanie-vuzov/id631171099?mt=8", nil)
+		ctx.send("play.google.com/store/apps/details?id=com.raspisaniyevuzov.app", nil)
 	}
 	ctx.chat.Keyboard = keyboard
 
@@ -195,7 +200,12 @@ func (ctx *handlerCtx) FacultySuggest() error {
 	if len(faculties) != 0 {
 		ctx.send(fmt.Sprintf("Список факультетов по запросу `%s`.\n\nНичего не нашёл? Измени запрос и попробуй еще раз.", ctx.Message.Text), keyboard.ToTelebotKeyboard())
 	} else {
-		ctx.send(fmt.Sprintf("Ничего не найдено по запросу `%s`.\n\nПопробуй изменить запрос.", ctx.Message.Text), nil)
+		ctx.send(emoji.Sprintf(
+			"Кажется, мы не нашли твой факультет.\nТы можешь добавить его через наш "+
+				"онлайн-редактор editor.rvuzov.ru или там же заказать расписание – мы его добавим :slightly_smiling_face:"), nil)
+		ctx.send("Кстати, ты можешь самостоятельно добавить расписание прямо в мобильном приложение:", nil)
+		ctx.send("itunes.apple.com/ru/app/raspisanie-vuzov/id631171099?mt=8", nil)
+		ctx.send("play.google.com/store/apps/details?id=com.raspisaniyevuzov.app", nil)
 	}
 	ctx.chat.Keyboard = keyboard
 	ctx.chat.Save()
@@ -243,7 +253,12 @@ func (ctx *handlerCtx) GroupSuggest() error {
 	if len(groups) != 0 {
 		ctx.send(fmt.Sprintf("Список групп по запросу `%s`. Ничего не нашёл?\n\nИзмени запрос и попробуй еще раз.", ctx.Message.Text), keyboard.ToTelebotKeyboard())
 	} else {
-		ctx.send(fmt.Sprintf("Ничего не найдено по запросу `%s`.\n\nПопробуй изменить запрос.", ctx.Message.Text), nil)
+		ctx.send(emoji.Sprintf(
+			"Кажется, мы не нашли твою группу.\nТы можешь добавить её через наш "+
+				"онлайн-редактор editor.rvuzov.ru или там же заказать расписание – мы его добавим :slightly_smiling_face:"), nil)
+		ctx.send("Кстати, ты можешь самостоятельно добавить расписание прямо в мобильном приложение:", nil)
+		ctx.send("itunes.apple.com/ru/app/raspisanie-vuzov/id631171099?mt=8", nil)
+		ctx.send("play.google.com/store/apps/details?id=com.raspisaniyevuzov.app", nil)
 	}
 	ctx.chat.Keyboard = keyboard
 	ctx.chat.Save()
